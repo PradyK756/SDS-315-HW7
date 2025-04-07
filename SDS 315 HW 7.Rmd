@@ -1,0 +1,168 @@
+---
+title: "SDS 315 HW 7"
+author: "Prady Kandi"
+date: "2025-04-07"
+output: pdf_document
+---
+prk599
+
+The link to the Github repo containing the R file can be found [here](https://github.com/PradyK756/SDS-315-HW7).
+
+\newpage
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(mosaic)
+library(mosaicCore)
+library(knitr)
+library(mosaic)
+library(MatchIt)
+```
+
+```{r imports, echo = FALSE}
+arms <- read.csv("armfold.csv")
+```
+
+```{r}
+table(arms$Sex)
+```
+```{r, echo = FALSE}
+male_Lonr <- arms |>
+  filter(Sex == "Male") |>
+  select(LonR_fold) |>
+  summarise(prop_right_on_top = mean(LonR_fold == 0))
+```
+
+```{r, echo = FALSE}
+female_Lonr<- arms |>
+  filter(Sex == "Female") |>
+  select(LonR_fold) |>
+  summarise(prop_right_on_top = mean(LonR_fold == 0))
+```
+There are 106 males and 111 females in this dataset. 52.8% of men folded their left arm on top, and 57.7% of women folded theirs on top.
+
+```{r, echo = FALSE}
+male_Lonr <- as.numeric(male_Lonr)
+female_Lonr <- as.numeric(female_Lonr)
+
+male_Lonr
+female_Lonr
+
+diff_prop = male_Lonr - female_Lonr
+diff_prop
+```
+The observed difference between the two groups is 4.8%.
+```{r, echo = FALSE}
+prop.test(x = c(as.numeric(male_Lonr * 106), as.numeric(female_Lonr * 111)), n = c(106, 111), correct = FALSE)
+```
+R's function prop_test gives a lower bound of -0.18 and an upper bound of 0.08.
+```{r, echo = FALSE}
+stan_E = sqrt(( male_Lonr * (1-male_Lonr) /106 ) + ( female_Lonr * (1-female_Lonr)/111 ))
+```
+To work the standard error out by hand, the formula is the square root of the sum of each proportion.
+
+
+```{r, echo = FALSE}
+low_bound = diff_prop - 1.96 * stan_E
+up_bound = diff_prop + 1.96 * stan_E
+
+low_bound
+up_bound
+```
+Multiply by 1.96 since this is the z-score for the 95th percentile..
+
+If we were to take many samples from this dataset and construct confidence intervals, 95% of all intervals would have their true mean lie between -0.1805 and 0.0839.
+
+```{r, echo = FALSE}
+stan_E
+```
+
+The standard error  of 0.067 is the expected difference between the two proportions. Between multiple samples, this value represents the mean diffmean.
+
+Sampling distribution is a collection of the diff mean of each sample in this context. The sample size will always stay the same, but each will have different data.
+
+The central limit theorem justifies this. 
+```{r, echo = FALSE}
+votes <- read.csv("turnout.csv")
+```
+
+```{r, echo = FALSE}
+votes |>
+  filter(voted1998 == 1) |>
+  group_by(GOTV_call) |>
+  summarise(count = n(), .groups = "drop")
+```
+
+```{r, echo = FALSE}
+voters_noCall <- votes |>
+  filter(voted1998 == 1) |>
+  select(GOTV_call) |>
+  summarise(No_Call = mean(GOTV_call == 0))
+
+voters_Call <- votes |>
+  filter(voted1998 == 1) |>
+  select(GOTV_call) |>
+  summarise(Call = mean(GOTV_call == 1))
+
+voters_noCall <- as.numeric(voters_noCall)
+voters_Call <- as.numeric(voters_Call)
+
+
+
+```
+
+
+```{r, echo = FALSE}
+stan_E2 = sqrt(( voters_noCall * (1-voters_noCall) /4701 ) + ( voters_Call * (1-voters_Call)/160 ))
+
+diff_prop2 = voters_Call - voters_noCall
+```
+
+```{r, echo = FALSE}
+low_bound2 = diff_prop2 - 1.96 * stan_E2
+up_bound2 = diff_prop2 + 1.96 * stan_E2
+
+low_bound2
+up_bound2
+```
+
+
+```{r, echo = FALSE}
+corr_1996_1998 <- glm(voted1998 ~ voted1996, family = "binomial", data = votes)
+corr_age_1998 <- glm(voted1998 ~ AGE, family = "binomial", data = votes)
+corr_MAJORPTY_1998 <- glm(voted1998 ~ MAJORPTY, family = "binomial", data = votes)
+
+summary(corr_1996_1998)
+summary(corr_age_1998)
+summary(corr_MAJORPTY_1998)
+```
+
+```{r, echo = FALSE}
+corr_1996_Call <- glm(GOTV_call ~ voted1996, family = "binomial", data = votes)
+corr_age_Call <- glm(GOTV_call ~ AGE, family = "binomial", data = votes)
+corr_MAJORPTY_Call <- glm(GOTV_call ~ MAJORPTY, family = "binomial", data = votes)
+
+summary(corr_1996_Call)
+summary(corr_age_Call)
+summary(corr_MAJORPTY_Call)
+```
+
+
+```{r, echo = FALSE}
+confint(corr_1996_1998)
+confint(corr_age_1998)
+confint(corr_MAJORPTY_1998)
+
+
+confint(corr_1996_Call)
+confint(corr_age_Call)
+confint(corr_MAJORPTY_Call)
+```
+```{r, echo = FALSE}
+votes_match = matchit(voted1998 ~ AGE + factor(voted1996) + factor(MAJORPTY), data = votes, ratio=5)
+votes_matched = match.data(votes_match)
+```
+
+
