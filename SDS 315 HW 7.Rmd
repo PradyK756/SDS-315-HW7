@@ -4,7 +4,7 @@ author: "Prady Kandi"
 date: "2025-04-07"
 output: pdf_document
 ---
-prk599
+EID: prk599
 
 The link to the Github repo containing the R file can be found [here](https://github.com/PradyK756/SDS-315-HW7).
 
@@ -25,7 +25,7 @@ library(MatchIt)
 arms <- read.csv("armfold.csv")
 ```
 
-```{r}
+```{r, echo = FALSE}
 table(arms$Sex)
 ```
 ```{r, echo = FALSE}
